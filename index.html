@@ -14,7 +14,7 @@
 
         .chat-container {
             width: 600px;
-            max-width: 200%;
+            max-width: 100%;
             margin: 50px auto;
             background-color: #ffffff;
             box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
@@ -61,6 +61,7 @@
 
         .chat-input {
             display: flex;
+            margin-bottom: 10px;
         }
 
         .chat-input input[type="text"] {
@@ -87,6 +88,38 @@
         .chat-input button:hover {
             background-color: #344e86;
         }
+
+        .image-upload {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .image-upload input[type="file"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: #f4f4f9;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+            margin-right: 10px;
+        }
+
+        .image-upload button {
+            background-color: #3b5998;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-upload button:hover {
+            background-color: #344e86;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +139,11 @@
             <input type="text" id="user-input" placeholder="Type your question here..." />
             <button onclick="sendMessage()">Send</button>
         </div>
+
+        <div class="image-upload">
+            <input type="file" id="image-input" accept="image/*,text/plain">
+            <button onclick="uploadImage()">Upload File</button>
+        </div>
     </div>
 
     <script>
@@ -115,9 +153,7 @@
             messageDiv.className = 'chat-message ' + sender + '-message';
             messageDiv.innerText = message;
             chatLog.appendChild(messageDiv);
-
-            // Scroll to the bottom of the chat
-            chatLog.scrollTop = chatLog.scrollHeight;
+            chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to bottom
         }
 
         function sendMessage() {
@@ -126,13 +162,10 @@
 
             if (userMessage === '') return;
 
-            // Add user's message to the chat
             addMessageToChat(userMessage, 'user');
 
-            // Clear the input field
             userInput.value = '';
 
-            // Send message to the backend
             fetch('/chat', {
                 method: 'POST',
                 headers: {
@@ -143,14 +176,48 @@
             .then(response => response.json())
             .then(data => {
                 const botMessage = data.response;
-
-                // Add bot's response to the chat
                 addMessageToChat(botMessage, 'bot');
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('An error occurred while sending the message.');
+            });
+        }
+
+        function uploadImage() {
+            const imageInput = document.getElementById('image-input');
+            const file = imageInput.files[0];
+
+            if (!file) {
+                alert("Please select an image or text file to upload.");
+                return;
+            }
+
+            // Display the file name in the chat log as a user message
+            addMessageToChat(`File uploaded: ${file.name}`, 'user');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload_file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    const botMessage = data.response;
+                    addMessageToChat(botMessage, 'bot');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file.');
             });
         }
     </script>
+
 </body>
 </html>
